@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="header">
+        <h1 class="logo"><a href="{{ url_for('home') }}" style="text-decoration: none; color: inherit;">Моя книга</a></h1>
+        <button id="themeButton" class="theme-button">🌙</button>
+    </header>
+
+    <main style="display: flex; justify-content: center; align-items: center; min-height: 70vh;">
+        <div class="auth-container">
+            <h2>Вход</h2>
+            <form method="POST">
+                <div class="form-group">
+                    <label>Почта</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" name="password" required>
+                </div>
+                <button type="submit" class="button">Войти</button>
+            </form>
+            <div class="links">
+                Нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрируйтесь</a><br>
+                <a href="{{ url_for('reset_request') }}">Забыли пароль?</a>
+            </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

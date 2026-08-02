@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Моя книга</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="header">
+    <h1 class="logo">Моя книга</h1>
+    <div class="header-actions">
+        {% if current_user.is_authenticated %}
+            <span class="greeting">👋 {{ current_user.username }}</span>
+            <a href="{{ url_for('logout') }}" class="button small">Выйти</a>
+        {% else %}
+            <a href="{{ url_for('login') }}" class="button small">Войти</a>
+            <a href="{{ url_for('register') }}" class="button small">Регистрация</a>
+        {% endif %}
+        <button id="themeButton" class="theme-button">🌙</button>
+    </div>
+</header>
+
+<main>
+    <h2 class="title">Добро пожаловать</h2>
+    <p class="subtitle">Выберите раздел</p>
+
+    <div class="menu">
+    <a href="{{ url_for('ad') }}" class="card">
+        📖
+        <span>АД</span>
+    </a>
+
+    <div class="card locked" onclick="lockedSection('Чистилище')">
+        🔒
+        <span>Чистилище</span>
+    </div>
+
+    <div class="card locked" onclick="lockedSection('Рай')">
+        🔒
+        <span>Рай</span>
+    </div>
+</div>
+</main>
+
+<!-- Затемнение -->
+<div id="overlay" class="overlay">
+    <div class="popup">
+        <h2>🚧 Раздел закрыт</h2>
+        <p id="popupText">Этот раздел находится в разработке.</p>
+        <button onclick="closePopup()">Хорошо</button>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

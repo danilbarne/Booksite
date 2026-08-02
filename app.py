@@ -15,6 +15,11 @@ bcrypt.init_app(app)
 login_manager.init_app(app)
 mail.init_app(app)
 
+# ВОТ ЗДЕСЬ МЫ ТЕПЕРЬ СОЗДАЕМ ТАБЛИЦЫ (ВЫНЕСЛИ ИЗ БЛОКА if __name__)
+with app.app_context():
+    db.create_all()
+# ----------------------------------------------------------
+
 # Настройка – куда переадресовывать неавторизованных пользователей
 login_manager.login_view = 'login'
 login_manager.login_message = 'Пожалуйста, войдите, чтобы получить доступ к этой странице.'
@@ -191,6 +196,4 @@ BookSite
     return "Письмо отправлено!"
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
     app.run(debug=False)

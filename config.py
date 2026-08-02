@@ -5,11 +5,21 @@ load_dotenv()
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+# --- ДОБАВЛЕН НОВЫЙ БЛОК ---
+# Создаем папку 'database', если её нет (это важно для Render)
+db_dir = os.path.join(BASE_DIR, "database")
+if not os.path.exists(db_dir):
+    os.makedirs(db_dir)
+
+db_path = os.path.join(db_dir, "site.db")
+# ---------------------------
+
 class Config:
 
     SECRET_KEY = os.getenv("SECRET_KEY")
 
-    SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(BASE_DIR, "database", "site.db")
+    # ИЗМЕНЕНА СТРОКА: теперь используем динамический путь, созданный выше
+    SQLALCHEMY_DATABASE_URI = "sqlite:///" + db_path
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 

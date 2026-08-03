@@ -1,72 +1,63 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Раздел АД</title>
-</head>
-<body>
-    <div style="max-width: 800px; margin: 0 auto; padding: 20px; font-family: sans-serif;">
-        
-        <h1>Раздел АД</h1>
+{% extends "base.html" %}
 
-        <!-- Всплывающие сообщения (flash) -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div style="
-                        padding: 12px; 
-                        margin-bottom: 15px; 
-                        border-radius: 4px; 
-                        border: 1px solid transparent;
-                        background-color: {% if category == 'success' %}#d4edda{% elif category == 'warning' %}#fff3cd{% else %}#f8d7da{% endif %};
-                        color: {% if category == 'success' %}#155724{% elif category == 'warning' %}#856404{% else %}#721c24{% endif %};
-                    ">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+{% block content %}
+    
+    <!-- Кнопка "Назад" (в стиле ваших кнопок .button.small) -->
+    <div style="width: 900px; max-width: 95%; margin: 0 auto 20px auto; text-align: left;">
+        <a href="{{ url_for('home') }}" class="button small" style="margin-bottom: 10px; display: inline-block;">← Назад на главную</a>
+    </div>
 
-        <hr>
+    <!-- Используем класс .card из вашего CSS (он идеально подходит для текста и комментариев) -->
+    <div class="card" style="width: 900px; max-width: 95%; padding: 40px; text-align: left;">
 
-        <!-- Форма для зарегистрированных -->
+        <!-- Заголовок -->
+        <h2 class="title" style="margin-top: 0; text-align: center;">Раздел АД</h2>
+
+        <!-- ТЕКСТ ДЛЯ ЧТЕНИЯ (Вставьте свой сюда) -->
+        <div style="line-height: 1.8; font-size: 18px; margin-bottom: 40px; text-align: left;">
+            <p><strong>Уважаемые посетители!</strong></p>
+            <p>Здесь находятся объявления и новости от администрации. Вы можете оставить отзыв или предложение в комментариях ниже.</p>
+            <p style="color: var(--button);"><em>Например: «Сегодня мы запустили новый раздел!»</em></p>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 30px 0;">
+
+        <!-- ФОРМА ДЛЯ КОММЕНТАРИЕВ -->
         {% if current_user.is_authenticated %}
-            <div style="background-color: #f8f9fa; padding: 20px; border: 1px solid #dee2e6; border-radius: 5px; margin-bottom: 30px;">
-                <h3>Оставить комментарий:</h3>
+            <div style="text-align: left; margin-bottom: 30px;">
+                <h3 style="font-size: 22px; margin-bottom: 15px;">Оставить комментарий:</h3>
+                
+                <!-- Классы .form-group и .button из вашего CSS -->
                 <form method="POST" action="">
-                    <textarea name="comment" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box;" placeholder="Напишите что-нибудь..." required></textarea>
-                    <br><br>
-                    <button type="submit" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Отправить</button>
+                    <div class="form-group">
+                        <textarea name="comment" rows="4" style="width: 100%; padding: 12px; border-radius: 10px; background: var(--bg); color: var(--text); border: 1px solid rgba(255,255,255,0.15); font-size: 16px; font-family: inherit; resize: vertical;" placeholder="Напишите что-нибудь..." required></textarea>
+                    </div>
+                    <button type="submit" class="button" style="width: auto; padding: 12px 30px;">Отправить</button>
                 </form>
             </div>
         {% else %}
             <!-- Блок для гостей -->
-            <div style="background-color: #fff3cd; padding: 15px; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 30px; text-align: center;">
-                <p style="margin: 0;"><strong>Чтобы оставить комментарий, вам нужно войти или зарегистрироваться.</strong></p>
-                <p style="margin-top: 10px;">
-                    <a href="{{ url_for('login') }}" style="color: #007bff;">Войти</a> | 
-                    <a href="{{ url_for('register') }}" style="color: #007bff;">Зарегистрироваться</a>
-                </p>
+            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
+                <p style="margin-bottom: 10px;">🔒 Чтобы написать комментарий, нужно войти.</p>
+                <a href="{{ url_for('login') }}" class="button small">Войти</a>
             </div>
         {% endif %}
 
-        <!-- Список комментариев -->
-        <h3>Комментарии:</h3>
-        <div>
+        <!-- СПИСОК КОММЕНТАРИЕВ -->
+        <h3 style="font-size: 22px; margin-bottom: 15px;">Комментарии:</h3>
+        <div style="text-align: left;">
             {% for comment in comments %}
-                <div style="border-bottom: 1px solid #dee2e6; padding: 15px 0;">
-                    <div style="font-size: 0.9em; color: #6c757d;">
-                        <strong>Пользователь #{{ comment.user_id }}</strong>
-                        <span style="float: right;">{{ comment.date_posted.strftime('%d.%m.%Y %H:%M') }}</span>
+                <div style="padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <div style="display: flex; justify-content: space-between; font-size: 14px; opacity: 0.7; margin-bottom: 8px;">
+                        <strong style="color: var(--button);">Пользователь #{{ comment.user_id }}</strong>
+                        <span>{{ comment.date_posted.strftime('%d.%m.%Y %H:%M') }}</span>
                     </div>
-                    <p style="margin-top: 5px;">{{ comment.content }}</p>
+                    <p style="font-size: 17px;">{{ comment.content }}</p>
                 </div>
             {% else %}
-                <p style="text-align: center; color: #6c757d; padding: 20px;">Пока нет комментариев. Будьте первым!</p>
+                <p style="text-align: center; opacity: 0.6; padding: 30px 0;">Пока нет комментариев. Будьте первым!</p>
             {% endfor %}
         </div>
 
     </div>
-</body>
-</html>
+{% endblock %}

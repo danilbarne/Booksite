@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookSite</title>
+    <!-- Подключаем ваш файл стилей -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Шапка из вашего CSS -->
+    <header class="header">
+        <div class="logo">📖 BookSite</div>
+        <div class="header-actions">
+            {% if current_user.is_authenticated %}
+                <span class="greeting">Привет, {{ current_user.username }}!</span>
+                <a href="{{ url_for('logout') }}" class="button small">Выйти</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="button small">Войти</a>
+                <a href="{{ url_for('register') }}" class="button small">Регистрация</a>
+            {% endif %}
+            
+            <!-- Кнопка смены темы (если захотите потом добавить JS) -->
+            <!-- <button class="theme-button" onclick="toggleTheme()">🌙</button> -->
+        </div>
+    </header>
+
+    <!-- Блок уведомлений (Flash) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Основной контент (в него будут вставляться АД, Вход, Регистрация) -->
+    <div style="display: flex; justify-content: center; min-height: 80vh; align-items: flex-start; padding-top: 20px;">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- JS для переключения темы (если решите добавить позже) -->
+    <script>
+        // Проверяем, какая тема сохранена в браузере
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light');
+        }
+
+        // Функция переключения темы
+        function toggleTheme() {
+            document.body.classList.toggle('light');
+            if (document.body.classList.contains('light')) {
+                localStorage.setItem('theme', 'light');
+            } else {
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+    </script>
+</body>
+</html>

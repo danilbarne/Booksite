@@ -2,12 +2,11 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from config import Config
 from extensions import db, bcrypt, login_manager, mail
-from models import User
-from itsdangerous import URLSafeTimedSerializer
-from flask_mail import Message
-import datetime
+from models import User, Message
 from comment_models import Comment
-from models import Message
+from flask_mail import Message as MailMessage
+import datetime
+import random  # Добавлено для генерации кодов
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -17,12 +16,9 @@ bcrypt.init_app(app)
 login_manager.init_app(app)
 mail.init_app(app)
 
-# ВОТ ЗДЕСЬ МЫ ТЕПЕРЬ СОЗДАЕМ ТАБЛИЦЫ (ВЫНЕСЛИ ИЗ БЛОКА if __name__)
 with app.app_context():
     db.create_all()
-# ----------------------------------------------------------
 
-# Настройка – куда переадресовывать неавторизованных пользователей
 login_manager.login_view = 'login'
 login_manager.login_message = 'Пожалуйста, войдите, чтобы получить доступ к этой странице.'
 login_manager.login_message_category = 'info'
@@ -35,171 +31,156 @@ def load_user(user_id):
 def home():
     return render_template("index.html", title="Главная")
 
-
 @app.route("/ad", methods=["GET", "POST"])
 def ad():
-    # Обработка отправки комментария
     if request.method == "POST":
-        # Проверяем, зарегистрирован ли пользователь
         if not current_user.is_authenticated:
             flash("Чтобы оставить комментарий, нужно войти или зарегистрироваться.", "warning")
             return redirect(url_for('login'))
-        
         comment_content = request.form.get("comment")
         if comment_content and len(comment_content.strip()) > 0:
-            # Создаём запись в базе
-            new_comment = Comment(
-                content=comment_content,
-                user_id=current_user.id
-            )
+            new_comment = Comment(content=comment_content, user_id=current_user.id)
             db.session.add(new_comment)
             db.session.commit()
             flash("Комментарий успешно добавлен!", "success")
         else:
             flash("Комментарий не может быть пустым.", "danger")
-            
-        # После отправки перезагружаем страницу
         return redirect(url_for('ad'))
-    
-    # Список всех комментариев (новые сверху)
     comments = Comment.query.order_by(Comment.date_posted.desc()).all()
-    
     return render_template("ad.html", title="Раздел АД", comments=comments)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
-    
     if request.method == "POST":
         username = request.form.get("username")
         email = request.form.get("email")
         password = request.form.get("password")
-        
-        # Проверка на существующего пользователя
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
             flash("Пользователь с такой почтой уже существует!", "danger")
             return redirect(url_for('register'))
-        
-        # Хешируем пароль
         hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
-        
+        verification_code = str(random.randint(100000, 999999))
+        code_expires = datetime.datetime.utcnow() + datetime.timedelta(minutes=10)
         user = User(
             username=username,
             email=email,
-            password=hashed_password
+            password=hashed_password,
+            verified=False,
+            verification_code=verification_code,
+            code_expires=code_expires
         )
-        
         db.session.add(user)
         db.session.commit()
-        
-        flash("Регистрация успешна! Теперь войдите.", "success")
-        return redirect(url_for('login'))
-    
+        msg = MailMessage(
+            subject="Код подтверждения BookSite",
+            recipients=[email]
+        )
+        msg.body = f"""
+Ваш код для регистрации: {verification_code}
+Код действителен 10 минут.
+"""
+        mail.send(msg)
+        flash(f"На почту {email} отправлен код. Введите его.", "success")
+        return redirect(url_for('verify', email=email))
     return render_template("register.html", title="Регистрация")
+
+@app.route("/verify/<email>", methods=["GET", "POST"])
+def verify(email):
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        flash("Пользователь не найден.", "danger")
+        return redirect(url_for('register'))
+    if user.verified:
+        flash("Аккаунт уже подтверждён.", "success")
+        return redirect(url_for('login'))
+    if request.method == "POST":
+        code = request.form.get("code")
+        if code == user.verification_code and datetime.datetime.utcnow() < user.code_expires:
+            user.verified = True
+            user.verification_code = None
+            user.code_expires = None
+            db.session.commit()
+            flash("Аккаунт подтверждён! Войдите.", "success")
+            return redirect(url_for('login'))
+        else:
+            flash("Неверный код или срок истёк.", "danger")
+    return render_template("verify.html", email=email)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
-    
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
-        
         user = User.query.filter_by(email=email).first()
-        
-        if user and bcrypt.check_password_hash(user.password, password):
+        if user and user.verified and bcrypt.check_password_hash(user.password, password):
             login_user(user)
             next_page = request.args.get('next')
             flash("Вы успешно вошли!", "success")
             return redirect(next_page) if next_page else redirect(url_for('home'))
+        elif user and not user.verified:
+            flash("Аккаунт не подтверждён. Проверьте почту.", "warning")
         else:
             flash("Неверная почта или пароль.", "danger")
-    
     return render_template("login.html", title="Вход")
-
-# Генератор токенов для сброса пароля
-def generate_reset_token(email):
-    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-    return serializer.dumps(email, salt='password-reset-salt')
-
-# Проверка токена
-def verify_reset_token(token, expiration=3600):
-    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-    try:
-        email = serializer.loads(token, salt='password-reset-salt', max_age=expiration)
-    except:
-        return None
-    return email
 
 @app.route("/reset-password", methods=["GET", "POST"])
 def reset_request():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
-    
     if request.method == "POST":
         email = request.form.get("email")
         user = User.query.filter_by(email=email).first()
-        
         if user:
-            # Генерируем токен
-            token = generate_reset_token(email)
-            # Ссылка для сброса (локально или на твоём домене)
-            reset_url = url_for('reset_token', token=token, _external=True)
-            
-            # Отправляем письмо
-            msg = Message(
-                subject="Сброс пароля на BookSite",
+            verification_code = str(random.randint(100000, 999999))
+            code_expires = datetime.datetime.utcnow() + datetime.timedelta(minutes=10)
+            user.verification_code = verification_code
+            user.code_expires = code_expires
+            db.session.commit()
+            msg = MailMessage(
+                subject="Код для сброса пароля BookSite",
                 recipients=[email]
             )
             msg.body = f"""
-Чтобы сбросить пароль, перейди по ссылке:
-
-{reset_url}
-
-Если ты не запрашивал сброс пароля, просто проигнорируй это письмо.
-
-Ссылка действительна 1 час.
-
-BookSite
+Ваш код для сброса пароля: {verification_code}
+Код действителен 10 минут.
 """
             mail.send(msg)
-            flash("Письмо с инструкцией отправлено на вашу почту.", "success")
-            return redirect(url_for('login'))
+            flash(f"Код отправлен на почту {email}.", "success")
+            return redirect(url_for('reset_verify', email=email))
         else:
             flash("Пользователь с такой почтой не найден.", "danger")
-    
     return render_template("reset_request.html", title="Сброс пароля")
 
-@app.route("/reset-password/<token>", methods=["GET", "POST"])
-def reset_token(token):
+@app.route("/reset-verify/<email>", methods=["GET", "POST"])
+def reset_verify(email):
     if current_user.is_authenticated:
         return redirect(url_for('home'))
-    
-    email = verify_reset_token(token)
-    if not email:
-        flash("Ссылка недействительна или истекла.", "danger")
-        return redirect(url_for('reset_request'))
-    
+    user = User.query.filter_by(email=email).first()
     if request.method == "POST":
-        password = request.form.get("password")
-        password_confirm = request.form.get("password_confirm")
-        
-        if password != password_confirm:
+        code = request.form.get("code")
+        new_password = request.form.get("new_password")
+        new_password_confirm = request.form.get("new_password_confirm")
+        if new_password != new_password_confirm:
             flash("Пароли не совпадают.", "danger")
-            return render_template("reset_token.html", title="Новый пароль")
-        
-        user = User.query.filter_by(email=email).first()
-        if user:
-            hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
+            return render_template("reset_verify.html", email=email)
+        if code == user.verification_code and datetime.datetime.utcnow() < user.code_expires:
+            hashed_password = bcrypt.generate_password_hash(new_password).decode("utf-8")
             user.password = hashed_password
+            user.verification_code = None
+            user.code_expires = None
             db.session.commit()
-            flash("Пароль успешно изменён! Теперь войдите.", "success")
+            flash("Пароль успешно изменён! Войдите.", "success")
             return redirect(url_for('login'))
-    
-    return render_template("reset_token.html", title="Новый пароль")
+        else:
+            flash("Неверный код или срок истёк.", "danger")
+    return render_template("reset_verify.html", email=email)
 
 @app.route("/logout")
 @login_required
@@ -208,46 +189,22 @@ def logout():
     flash("Вы вышли из аккаунта.", "success")
     return redirect(url_for('home'))
 
-@app.route("/send-test")
-def send_test():
-    msg = Message(
-        subject="Проверка BookSite",
-        recipients=["danabaranec71@gmail.com"]  # замени на свою почту
-    )
-    msg.body = """
-Поздравляем!
-
-Если ты получил это письмо, значит отправка почты работает.
-
-BookSite
-"""
-    mail.send(msg)
-    return "Письмо отправлено!"
-
 @app.route("/chat", methods=["GET", "POST"])
 def chat():
-    # Обработка отправки нового сообщения
     if request.method == "POST":
         if current_user.is_authenticated:
             content = request.form.get("message")
             if content and len(content.strip()) > 0:
-                new_msg = Message(
-                    content=content,
-                    user_id=current_user.id
-                )
+                new_msg = Message(content=content, user_id=current_user.id)
                 db.session.add(new_msg)
                 db.session.commit()
                 flash("Сообщение отправлено!", "success")
                 return redirect(url_for('chat'))
-    
-    # Обработка очистки чата (если передали параметр clear=true)
     if request.args.get('clear') == 'true' and current_user.is_authenticated and current_user.username == 'ADMIN':
         db.session.query(Message).delete()
         db.session.commit()
         flash("Чат полностью очищен.", "success")
         return redirect(url_for('chat'))
-    
-    # Загрузка всех сообщений (новые сверху)
     messages = Message.query.order_by(Message.date_posted.asc()).all()
     return render_template("chat.html", title="Групповой чат", messages=messages)
 
@@ -256,7 +213,6 @@ def delete_message(msg_id):
     if not current_user.is_authenticated or current_user.username != 'ADMIN':
         flash("Только администратор может удалять сообщения.", "danger")
         return redirect(url_for('chat'))
-    
     msg = Message.query.get(msg_id)
     if msg:
         db.session.delete(msg)

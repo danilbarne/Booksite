@@ -7,6 +7,7 @@ from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Message
 import datetime
 from comment_models import Comment
+from models import Message
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -222,6 +223,46 @@ BookSite
 """
     mail.send(msg)
     return "Письмо отправлено!"
+
+@app.route("/chat", methods=["GET", "POST"])
+def chat():
+    # Обработка отправки нового сообщения
+    if request.method == "POST":
+        if current_user.is_authenticated:
+            content = request.form.get("message")
+            if content and len(content.strip()) > 0:
+                new_msg = Message(
+                    content=content,
+                    user_id=current_user.id
+                )
+                db.session.add(new_msg)
+                db.session.commit()
+                flash("Сообщение отправлено!", "success")
+                return redirect(url_for('chat'))
+    
+    # Обработка очистки чата (если передали параметр clear=true)
+    if request.args.get('clear') == 'true' and current_user.is_authenticated and current_user.username == 'ADMIN':
+        db.session.query(Message).delete()
+        db.session.commit()
+        flash("Чат полностью очищен.", "success")
+        return redirect(url_for('chat'))
+    
+    # Загрузка всех сообщений (новые сверху)
+    messages = Message.query.order_by(Message.date_posted.asc()).all()
+    return render_template("chat.html", title="Групповой чат", messages=messages)
+
+@app.route("/delete_message/<int:msg_id>")
+def delete_message(msg_id):
+    if not current_user.is_authenticated or current_user.username != 'ADMIN':
+        flash("Только администратор может удалять сообщения.", "danger")
+        return redirect(url_for('chat'))
+    
+    msg = Message.query.get(msg_id)
+    if msg:
+        db.session.delete(msg)
+        db.session.commit()
+        flash("Сообщение удалено.", "success")
+    return redirect(url_for('chat'))
 
 if __name__ == "__main__":
     app.run(debug=False)

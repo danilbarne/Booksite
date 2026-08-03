@@ -9,12 +9,14 @@
 <body>
 
 <header class="header">
-    <h1 class="logo">Моя книга</h1>
+    <h1 class="logo">Сайт</h1>
     <div class="header-actions">
         {% if current_user.is_authenticated %}
             <span class="greeting">👋 {{ current_user.username }}</span>
+            <a href="{{ url_for('chat') }}" class="button small" style="margin-right: 8px;">💬 Чат</a> <!-- ДОБАВИЛИ СЮДА -->
             <a href="{{ url_for('logout') }}" class="button small">Выйти</a>
         {% else %}
+            <a href="{{ url_for('chat') }}" class="button small" style="margin-right: 8px;">💬 Чат</a> <!-- И СЮДА ТОЖЕ -->
             <a href="{{ url_for('login') }}" class="button small">Войти</a>
             <a href="{{ url_for('register') }}" class="button small">Регистрация</a>
         {% endif %}
@@ -22,6 +24,9 @@
     </div>
 </header>
 
+<!-- Уберите отсюда эту строку, она теперь не нужна: 
+<a href="{{ url_for('chat') }}" class="button small">💬 Чат</a> 
+-->
 <main>
     <h2 class="title">Добро пожаловать</h2>
     <p class="subtitle">Выберите раздел</p>

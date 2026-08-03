@@ -6,6 +6,7 @@ from models import User
 from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Message
 import datetime
+from comment_models import Comment
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -33,9 +34,36 @@ def load_user(user_id):
 def home():
     return render_template("index.html", title="Главная")
 
-@app.route("/ad")
+
+@app.route("/ad", methods=["GET", "POST"])
 def ad():
-    return render_template("ad.html", title="АД")
+    # Обработка отправки комментария
+    if request.method == "POST":
+        # Проверяем, зарегистрирован ли пользователь
+        if not current_user.is_authenticated:
+            flash("Чтобы оставить комментарий, нужно войти или зарегистрироваться.", "warning")
+            return redirect(url_for('login'))
+        
+        comment_content = request.form.get("comment")
+        if comment_content and len(comment_content.strip()) > 0:
+            # Создаём запись в базе
+            new_comment = Comment(
+                content=comment_content,
+                user_id=current_user.id
+            )
+            db.session.add(new_comment)
+            db.session.commit()
+            flash("Комментарий успешно добавлен!", "success")
+        else:
+            flash("Комментарий не может быть пустым.", "danger")
+            
+        # После отправки перезагружаем страницу
+        return redirect(url_for('ad'))
+    
+    # Список всех комментариев (новые сверху)
+    comments = Comment.query.order_by(Comment.date_posted.desc()).all()
+    
+    return render_template("ad.html", title="Раздел АД", comments=comments)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():

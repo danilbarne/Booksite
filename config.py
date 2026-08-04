@@ -24,7 +24,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # === ИЗМЕНЕНИЕ: БЕРЁМ ВСЁ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ ===
-    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.sendgrid.com")  # По умолчанию gmail, если ничего нет
+    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.sendgrid.net")  # По умолчанию gmail, если ничего нет
     MAIL_PORT = int(os.getenv("MAIL_PORT", 587))
     MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "True").lower() == "true"
     

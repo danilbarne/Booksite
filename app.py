@@ -109,7 +109,7 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        print("MAIL_SERVER:", app.config["MAIL_SERVER"])
+        
         print("MAIL_DEFAULT_SENDER:", app.config["MAIL_DEFAULT_SENDER"])
 
         send_email(

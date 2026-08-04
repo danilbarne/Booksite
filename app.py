@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from config import Config
-from extensions import db, bcrypt, login_manager, mail
+from extensions import db, bcrypt, login_manager
 from models import User, Message
 from comment_models import Comment
-from flask_mail import Message as MailMessage
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail 
 import datetime
 import random  # Добавлено для генерации кодов
 
@@ -14,7 +15,7 @@ app.config.from_object(Config)
 db.init_app(app)
 bcrypt.init_app(app)
 login_manager.init_app(app)
-mail.init_app(app)
+
 
 with app.app_context():
     db.create_all()
@@ -22,6 +23,26 @@ with app.app_context():
 login_manager.login_view = 'login'
 login_manager.login_message = 'Пожалуйста, войдите, чтобы получить доступ к этой странице.'
 login_manager.login_message_category = 'info'
+
+def send_email(to_email, subject, body):
+    message = Mail(
+        from_email=app.config["MAIL_DEFAULT_SENDER"],
+        to_emails=to_email,
+        subject=subject,
+        plain_text_content=body
+    )
+
+    try:
+        sg = SendGridAPIClient(app.config["SENDGRID_API_KEY"])
+        response = sg.send(message)
+
+        print("EMAIL SENT")
+        print(response.status_code)
+
+    except Exception as e:
+        print("SENDGRID ERROR:")
+        print(str(e))
+        raise
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -91,19 +112,15 @@ def register():
         print("MAIL_SERVER:", app.config["MAIL_SERVER"])
         print("MAIL_DEFAULT_SENDER:", app.config["MAIL_DEFAULT_SENDER"])
 
-        msg = MailMessage(
-            subject="Код подтверждения BookSite",
-            sender=app.config["MAIL_DEFAULT_SENDER"],
-            recipients=[email]
-        )
+        send_email(
+    email,
+    "Код подтверждения BookSite",
+    f"""Ваш код для регистрации: {verification_code}
 
-        msg.body = f"""
-Ваш код для регистрации: {verification_code}
-Код действителен 10 минут.
-"""
+Код действителен 10 минут."""
+)
 
         try:
-            mail.send(msg)
             print("Письмо отправлено успешно")
         except Exception as e:
             print("SMTP ERROR:", repr(e))
@@ -170,17 +187,14 @@ def reset_request():
             user.verification_code = verification_code
             user.code_expires = code_expires
             db.session.commit()
-            msg = MailMessage(
-                subject="Код для сброса пароля BookSite",
-                sender=app.config["MAIL_DEFAULT_SENDER"],
-                recipients=[email]
-            )
-            msg.body = f"""
-Ваш код для сброса пароля: {verification_code}
-Код действителен 10 минут.
-"""
+            send_email(
+    email,
+    "Код для сброса пароля BookSite",
+    f"""Ваш код для сброса пароля: {verification_code}
+
+Код действителен 10 минут."""
+)
     try:
-       mail.send(msg)
        print("Письмо отправлено успешно")
     except Exception as e:
        print("SMTP ERROR:", repr(e))

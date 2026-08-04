@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Подтверждение почты</title>
+</head>
+<body>
+
+    <h1>Подтверждение регистрации</h1>
+
+    <p>Мы отправили код на почту <b>{{ email }}</b></p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p style="color:red;">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <label>Введите код:</label><br><br>
+
+        <input
+            type="text"
+            name="code"
+            maxlength="6"
+            required
+        >
+
+        <br><br>
+
+        <button type="submit">
+            Подтвердить
+        </button>
+    </form>
+
+</body>
+</html>

@@ -178,27 +178,36 @@ def login():
 def reset_request():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
+
     if request.method == "POST":
         email = request.form.get("email")
         user = User.query.filter_by(email=email).first()
+
         if user:
             verification_code = str(random.randint(100000, 999999))
             code_expires = datetime.datetime.utcnow() + datetime.timedelta(minutes=10)
+
             user.verification_code = verification_code
             user.code_expires = code_expires
             db.session.commit()
+
             send_email(
-    email,
-    "Код для сброса пароля BookSite",
-    f"""Ваш код для сброса пароля: {verification_code}
+                email,
+                "Код для сброса пароля BookSite",
+                f"""Ваш код для сброса пароля: {verification_code}
 
 Код действителен 10 минут."""
-)
-    try:
-       print("Письмо отправлено успешно")
-    except Exception as e:
-       print("SMTP ERROR:", repr(e))
-       raise
+            )
+
+            print("Письмо отправлено успешно")
+
+            flash(f"Код отправлен на почту {email}.", "success")
+            return redirect(url_for("reset_verify", email=email))
+
+        else:
+            flash("Пользователь с такой почтой не найден.", "danger")
+
+    return render_template("reset_request.html", title="Сброс пароля")
 
 @app.route("/reset-verify/<email>", methods=["GET", "POST"])
 def reset_verify(email):

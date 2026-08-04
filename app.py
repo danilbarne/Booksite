@@ -53,17 +53,29 @@ def ad():
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
+
     if request.method == "POST":
         username = request.form.get("username")
         email = request.form.get("email")
         password = request.form.get("password")
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
+
+        # Проверяем email
+        existing_email = User.query.filter_by(email=email).first()
+        if existing_email:
             flash("Пользователь с такой почтой уже существует!", "danger")
-            return redirect(url_for('register'))
+            return redirect(url_for("register"))
+
+        # Проверяем username
+        existing_username = User.query.filter_by(username=username).first()
+        if existing_username:
+            flash("Пользователь с таким именем уже существует!", "danger")
+            return redirect(url_for("register"))
+
         hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
+
         verification_code = str(random.randint(100000, 999999))
         code_expires = datetime.datetime.utcnow() + datetime.timedelta(minutes=10)
+
         user = User(
             username=username,
             email=email,
@@ -72,20 +84,34 @@ def register():
             verification_code=verification_code,
             code_expires=code_expires
         )
+
         db.session.add(user)
         db.session.commit()
+
+        print("MAIL_SERVER:", app.config["MAIL_SERVER"])
+        print("MAIL_DEFAULT_SENDER:", app.config["MAIL_DEFAULT_SENDER"])
+
         msg = MailMessage(
             subject="Код подтверждения BookSite",
             sender=app.config["MAIL_DEFAULT_SENDER"],
             recipients=[email]
         )
+
         msg.body = f"""
 Ваш код для регистрации: {verification_code}
 Код действителен 10 минут.
 """
-        mail.send(msg)
+
+        try:
+            mail.send(msg)
+            print("Письмо отправлено успешно")
+        except Exception as e:
+            print("SMTP ERROR:", repr(e))
+            raise
+
         flash(f"На почту {email} отправлен код. Введите его.", "success")
-        return redirect(url_for('verify', email=email))
+        return redirect(url_for("verify", email=email))
+
     return render_template("register.html", title="Регистрация")
 
 @app.route("/verify/<email>", methods=["GET", "POST"])
@@ -153,12 +179,12 @@ def reset_request():
 Ваш код для сброса пароля: {verification_code}
 Код действителен 10 минут.
 """
-            mail.send(msg)
-            flash(f"Код отправлен на почту {email}.", "success")
-            return redirect(url_for('reset_verify', email=email))
-        else:
-            flash("Пользователь с такой почтой не найден.", "danger")
-    return render_template("reset_request.html", title="Сброс пароля")
+    try:
+       mail.send(msg)
+       print("Письмо отправлено успешно")
+    except Exception as e:
+       print("SMTP ERROR:", repr(e))
+       raise
 
 @app.route("/reset-verify/<email>", methods=["GET", "POST"])
 def reset_verify(email):

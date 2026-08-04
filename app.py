@@ -76,6 +76,7 @@ def register():
         db.session.commit()
         msg = MailMessage(
             subject="Код подтверждения BookSite",
+            sender=app.config["MAIL_DEFAULT_SENDER"],
             recipients=[email]
         )
         msg.body = f"""
@@ -145,6 +146,7 @@ def reset_request():
             db.session.commit()
             msg = MailMessage(
                 subject="Код для сброса пароля BookSite",
+                sender=app.config["MAIL_DEFAULT_SENDER"],
                 recipients=[email]
             )
             msg.body = f"""

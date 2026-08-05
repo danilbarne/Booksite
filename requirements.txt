@@ -6,3 +6,4 @@ python-dotenv
 itsdangerous
 gunicorn
 sendgrid
+psycopg2-binary

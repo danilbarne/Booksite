@@ -16,6 +16,11 @@ class Config:
 
     SECRET_KEY = os.getenv("SECRET_KEY")
 
+    database_url = os.getenv("DATABASE_URL")
+
+if database_url:
+    SQLALCHEMY_DATABASE_URI = database_url
+else:
     SQLALCHEMY_DATABASE_URI = "sqlite:///" + db_path
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 

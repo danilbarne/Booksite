@@ -573,3 +573,24 @@ body.light .verify-box input:focus{
     color:var(--button);
     font-weight:bold;
 }
+
+table{
+    width:100%;
+    margin-top:25px;
+    border-collapse:collapse;
+}
+
+th,td{
+    padding:14px;
+    border:1px solid rgba(255,255,255,.15);
+    text-align:center;
+}
+
+th{
+    background:var(--button);
+    color:white;
+}
+
+tr:nth-child(even){
+    background:rgba(255,255,255,.03);
+}

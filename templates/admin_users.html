@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Пользователи</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="auth-container" style="max-width:1000px; margin:40px auto;">
+
+    <h2>Пользователи сайта</h2>
+
+    <table style="width:100%; border-collapse:collapse;">
+
+        <tr>
+            <th>ID</th>
+            <th>Ник</th>
+            <th>Email</th>
+            <th>Подтвержден</th>
+            <th>Дата регистрации</th>
+        </tr>
+
+        {% for user in users %}
+
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+
+            <td>
+                {% if user.verified %}
+                    ✅
+                {% else %}
+                    ❌
+                {% endif %}
+            </td>
+
+            <td>{{ user.created_at }}</td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+</div>
+
+</body>
+</html>

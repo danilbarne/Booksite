@@ -271,5 +271,15 @@ def delete_message(msg_id):
         flash("Сообщение удалено.", "success")
     return redirect(url_for('chat'))
 
+@app.route("/admin/users")
+@login_required
+def admin_users():
+    if current_user.username != "ADMIN":
+        flash("Доступ запрещён.", "danger")
+        return redirect(url_for("home"))
+
+    users = User.query.order_by(User.created_at.desc()).all()
+    return render_template("admin_users.html", users=users)
+
 if __name__ == "__main__":
     app.run(debug=False)

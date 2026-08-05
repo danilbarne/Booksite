@@ -2,38 +2,56 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Подтверждение почты</title>
+    <title>Подтверждение регистрации</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-    <h1>Подтверждение регистрации</h1>
+<div class="verify-wrapper">
 
-    <p>Мы отправили код на почту <b>{{ email }}</b></p>
+    <div class="verify-box">
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <p style="color:red;">{{ message }}</p>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+        <h2>Подтверждение регистрации</h2>
 
-    <form method="POST">
-        <label>Введите код:</label><br><br>
+        <p>
+            Мы отправили код на почту
+            <span class="email">{{ email }}</span>
+        </p>
 
-        <input
-            type="text"
-            name="code"
-            maxlength="6"
-            required
-        >
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-        <br><br>
+        <form method="POST">
 
-        <button type="submit">
-            Подтвердить
-        </button>
-    </form>
+            <div class="form-group">
+                <label>Код подтверждения</label>
+
+                <input
+                    type="text"
+                    name="code"
+                    maxlength="6"
+                    placeholder="Введите 6-значный код"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="button">
+                Подтвердить
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
 
 </body>
 </html>

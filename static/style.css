@@ -495,3 +495,81 @@ body.light .alert-danger {
         margin: 10px;
     }
 }
+
+/* ===========================
+   ПОДТВЕРЖДЕНИЕ / СБРОС ПАРОЛЯ
+=========================== */
+
+.verify-wrapper{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding:20px;
+}
+
+.verify-box{
+    width:420px;
+    max-width:95%;
+    background:var(--card);
+    border-radius:18px;
+    padding:35px;
+    box-shadow:0 10px 35px rgba(0,0,0,.35);
+    animation:popup .25s ease;
+}
+
+.verify-box h2{
+    text-align:center;
+    margin-bottom:15px;
+    font-size:30px;
+}
+
+.verify-box p{
+    text-align:center;
+    margin-bottom:20px;
+    opacity:.8;
+    line-height:1.6;
+}
+
+.verify-box input{
+    width:100%;
+    padding:14px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,.15);
+    background:var(--bg);
+    color:var(--text);
+    font-size:17px;
+    outline:none;
+    transition:.3s;
+}
+
+.verify-box input:focus{
+    border-color:var(--button);
+    box-shadow:0 0 0 3px rgba(179,0,0,.2);
+}
+
+body.light .verify-box input:focus{
+    box-shadow:0 0 0 3px rgba(0,102,204,.2);
+}
+
+.verify-box button{
+    width:100%;
+    margin-top:20px;
+    padding:14px;
+    background:var(--button);
+    color:white;
+    border:none;
+    border-radius:10px;
+    font-size:18px;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.verify-box button:hover{
+    background:var(--buttonHover);
+}
+
+.verify-box .email{
+    color:var(--button);
+    font-weight:bold;
+}

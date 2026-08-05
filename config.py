@@ -13,15 +13,15 @@ db_path = os.path.join(db_dir, "site.db")
 
 
 class Config:
-
     SECRET_KEY = os.getenv("SECRET_KEY")
 
     database_url = os.getenv("DATABASE_URL")
 
-if database_url:
-    SQLALCHEMY_DATABASE_URI = database_url
-else:
-    SQLALCHEMY_DATABASE_URI = "sqlite:///" + db_path
+    if database_url:
+        SQLALCHEMY_DATABASE_URI = database_url
+    else:
+        SQLALCHEMY_DATABASE_URI = "sqlite:///" + db_path
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
